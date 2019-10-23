@@ -1,0 +1,26 @@
+kind: pipeline
+name: FirmwareToolkit
+
+workspace:
+  base: /go
+  path: src/github.com/Mimoja/MimojaFirmwareToolkit
+
+clone:
+  depth: 2
+
+steps:
+
+  - name: docker-yara
+    image: plugins/docker
+    settings:
+      repo: registry.mimoja.de:443/mft/go-yara
+      dockerfile: docker/yara/Dockerfile
+      registry: registry.mimoja.de:443
+      username:
+        from_secret: docker_username
+      password:
+        from_secret: docker_password
+
+trigger:
+  event:
+  - push

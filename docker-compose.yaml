@@ -1,0 +1,54 @@
+version: '3'
+services:
+  minio:
+    image: minio/minio
+    container_name: mft_minio
+    volumes:
+      - './workspace/minio:/data'
+    command: server /data
+    ports:
+      - "127.0.0.1:9000:9000"
+    restart: unless-stopped
+    env_file:
+      - env
+
+  rabbitmq:
+    container_name: mft_rabbit
+    build: docker/rabbit
+    ports:
+      - "127.0.0.1:5672:5672"
+      - "127.0.0.1:15672:15672"
+    volumes:
+      - './workspace/rabbitmq:/var/lib/rabbitmq'
+    restart: unless-stopped
+    env_file:
+      - env
+
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:6.5.1
+    container_name: mft_elasticsearch
+    ports: ['127.0.0.1:9200:9200']
+    volumes:
+      - './workspace/elastic:/usr/share/elasticsearch/data'
+    healthcheck:
+      test: curl --cacert /usr/share/elasticsearch/config/certs/ca/ca.crt -s https://localhost:9200 >/dev/null; if [[ $$? == 52 ]]; then echo 0; else echo 1; fi
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    env_file:
+      - env
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    restart: unless-stopped
+
+  kibana:
+    image: docker.elastic.co/kibana/kibana:6.5.1
+    container_name: mft_kibana
+    env_file:
+      - env
+    ports: ['127.0.0.1:5601:5601']
+    depends_on:
+      - elasticsearch
+    restart: unless-stopped
